@@ -11,7 +11,7 @@ public class Register{
 	
 	public void setRegister(int index, int value) throws IllegalArgumentException {
 		if(index == 0)
-			throw new IllegalArgumentException("Register r0 cannot be changed");
+			System.out.println("NOTE: Register r0 cannot be changed");
 		if(index < 0 || index > 31)
 			throw new IllegalArgumentException("Register index out of range");
 		r[index] = value;

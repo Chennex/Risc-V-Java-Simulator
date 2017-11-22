@@ -129,7 +129,7 @@ public class IsaExecute {
 
 	public static IsaSim auipc(IsaSim context) {
 		// auipc - add upper immediate to PC
-		context.PC += context.arguments.immediate;
+		context.reg.setRegister(context.arguments.rd, context.PC + context.arguments.immediate);
 		return context;
 	}
 
