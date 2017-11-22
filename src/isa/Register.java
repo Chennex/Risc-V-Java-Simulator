@@ -24,4 +24,12 @@ public class Register{
 			throw new IllegalArgumentException("Register index out of range");
 		return r[index];
 	}
+	
+	public String toString() {
+		String result = "";
+		for(int i=0; i<32;i++) {
+			result = result + "Register "+i+": "+r[i]+"\n";
+		}
+		return result;
+	}
 }

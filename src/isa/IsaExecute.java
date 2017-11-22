@@ -14,11 +14,11 @@ public class IsaExecute {
 		case 101:	//lhu
 		case 110:	//lwu
 		}
+		context.PC += 4;
 		return context;
 	}
 
 	public static IsaSim handle_0x13(IsaSim context) {
-		// TODO slli, slti, sltiu, xori, srli, srai, ori, andi
 		int n = 0;
 		switch(context.arguments.funct3) {
 		case 0:
@@ -30,29 +30,34 @@ public class IsaExecute {
 			n = context.reg.getRegister(context.arguments.rs1) << context.arguments.immediate;
 			break;
 		case 2:
-			//TODO: slti
+			//slti
+			n = context.reg.getRegister(context.arguments.rs1) < context.arguments.immediate ? 1 : 0;
 			break;
 		case 3:
-			//TODO: sltiu
+			//sltiu
+			n = Integer.compareUnsigned(context.reg.getRegister(context.arguments.rs1), context.arguments.immediate) < 0 ? 1 : 0;
 			break;
 		case 4:
-			//TODO: xori
+			//xori
+			n = context.reg.getRegister(context.arguments.rs1) ^ context.arguments.immediate;
 			break;
 		case 5:
 			if((context.arguments.immediate & 0x7f0) == 0) {
-				//TODO: srli
+				//srli
+				n = context.reg.getRegister(context.arguments.rs1) >>> context.arguments.immediate;
 			} else {
 				//srai
-				context.arguments.immediate = (context.arguments.immediate) & 0xf;
-				System.out.println(context.arguments.immediate);
-				n = context.reg.getRegister(context.arguments.rs1) >> context.arguments.immediate;
+				n = context.reg.getRegister(context.arguments.rs1) >> (context.arguments.immediate & 0xf);
 			}
 			break;
 		case 6:
-			//TODO: ori
+			//ori
+			n = context.reg.getRegister(context.arguments.rs1) | context.arguments.immediate;
 			break;
 		case 7:
-			//TODO: andi
+			//andi
+			n = context.reg.getRegister(context.arguments.rs1) & context.arguments.immediate;
+			break;
 		}
 		context.reg.setRegister(context.arguments.rd, n);
 		context.PC += 4;
@@ -60,12 +65,29 @@ public class IsaExecute {
 	}
 
 	public static IsaSim shift_immediate_word(IsaSim context) {
-		// TODO slliw, srliw, sraiw
+		int n = 0;
+		switch(context.arguments.funct3) {
+		case 1:
+			//slliw
+			n = context.reg.getRegister(context.arguments.rs1) << context.arguments.immediate;
+		case 5:
+			if((context.arguments.immediate & 0x7f0) == 0) {
+				//srliw
+				n = context.reg.getRegister(context.arguments.rs1) >>> context.arguments.immediate;
+			} else {
+				//sraiw
+				n = context.reg.getRegister(context.arguments.rs1) >> ((context.arguments.immediate) & 0xf);
+			}
+		}
+		context.reg.setRegister(context.arguments.rd, n);
+		context.PC += 4;
 		return context;
 	}
 
 	public static IsaSim jalr(IsaSim context) {
-		// TODO jalr
+		// jalr
+		context.reg.setRegister(context.arguments.rd, context.PC + 4);
+		context.PC = context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate;
 		return context;
 	}
 	
@@ -88,6 +110,7 @@ public class IsaExecute {
 			break;
 		case 10:
 			//Exit with code 0
+			System.out.println(context.reg);
 			System.exit(0);
 			break;
 		case 11:
@@ -96,6 +119,7 @@ public class IsaExecute {
 			break;
 		case 17:
 			//Exit with code in a1
+			System.out.println(context.reg);
 			System.exit(context.reg.getRegister(11));
 			break;
 		}
@@ -132,11 +156,12 @@ public class IsaExecute {
 		case 011:	//sd
 			
 		}
+		context.PC += 4;
 		return context;
 	}
 
 	public static IsaSim handle_0x33(IsaSim context) {
-		// TODO add, sub, sll, slt, sltu, xor, srl, sra, or, and
+		// add, sub, sll, slt, sltu, xor, srl, sra, or, and
 		
 		int n = 0;	//Temp int to store result in. Should be written to registry at address rd.
 		switch(context.arguments.funct3)
@@ -148,21 +173,31 @@ public class IsaExecute {
 				n = context.reg.getRegister(context.arguments.rs1) - context.reg.getRegister(context.arguments.rs2);
 			break;
 		case 1:	//sll
-			
+			n = context.reg.getRegister(context.arguments.rs1) << context.reg.getRegister(context.arguments.rs2);
+			break;
 		case 2:	//slt
-
+			n = context.reg.getRegister(context.arguments.rs1) < context.reg.getRegister(context.arguments.rs2) ? 1 : 0;
+			break;
 		case 3:	//sltu
-
+			n = Integer.compare(context.reg.getRegister(context.arguments.rs1), context.reg.getRegister(context.arguments.rs2)) < 0 ? 1 : 0;
+			break;
 		case 4:	//xor
-			n = context.arguments.rs1 ^ context.arguments.rs2;
+			n = context.reg.getRegister(context.arguments.rs1) ^ context.reg.getRegister(context.arguments.rs2);
 			break;
 		case 5:	//srl and sra
-			
+			if(context.arguments.funct7 == 0) {
+				//srl
+				n = context.reg.getRegister(context.arguments.rs1) >>> context.reg.getRegister(context.arguments.rs2);
+			} else {
+				//sra
+				n = context.reg.getRegister(context.arguments.rs1) >> context.reg.getRegister(context.arguments.rs2);
+			}
+			break;
 		case 6:	//or
-			n = context.arguments.rs1 | context.arguments.rs2;
+			n = context.reg.getRegister(context.arguments.rs1) | context.reg.getRegister(context.arguments.rs2);
 			break;
 		case 7:	//and
-			n = context.arguments.rs1 & context.arguments.rs2;
+			n = context.reg.getRegister(context.arguments.rs1) & context.reg.getRegister(context.arguments.rs2);
 			break;
 		}
 		
@@ -173,8 +208,34 @@ public class IsaExecute {
 	}
 
 	public static IsaSim handle_0x3b(IsaSim context) {
-		// TODO addw, subw, sllw, srlw, sraw
-		
+		// addw, subw, sllw, srlw, sraw
+		int n = 0;
+		switch(context.arguments.funct3) {
+		case 0:
+			if(context.arguments.funct7 == 0) {
+				//addw
+				n = context.reg.getRegister(context.arguments.rs1) + context.reg.getRegister(context.arguments.rs2);
+			} else {
+				//subw
+				n = context.reg.getRegister(context.arguments.rs1) - context.reg.getRegister(context.arguments.rs2);
+			}
+			break;
+		case 1:
+			//sllw
+			n = context.reg.getRegister(context.arguments.rs1) << context.reg.getRegister(context.arguments.rs2);
+			break;
+		case 5:
+			if(context.arguments.funct7 == 0) {
+				//srlw
+				n = context.reg.getRegister(context.arguments.rs1) >>> context.reg.getRegister(context.arguments.rs2);
+			} else {
+				//sraw
+				n = context.reg.getRegister(context.arguments.rs1) >> context.reg.getRegister(context.arguments.rs2);
+			}
+			break;
+		}
+		context.reg.setRegister(context.arguments.rd, n);
+		context.PC += 4;
 		return context;
 	}
 
@@ -234,6 +295,5 @@ public class IsaExecute {
 		context.PC += context.arguments.immediate;
 		return context;
 	}
-
 
 }

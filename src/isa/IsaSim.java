@@ -38,7 +38,7 @@ public class IsaSim {
         arguments.rd = (arguments.instruction >>> 7) & 0x1f;
         arguments.funct3 = (arguments.instruction >>> 12) & 0x7;
         arguments.rs1 = (arguments.instruction >>> 15) & 0x1f;
-        arguments.immediate = (arguments.instruction >>> 20);
+        arguments.immediate = (arguments.instruction >> 20);
 		System.out.println(arguments.toString());
 
         switch(arguments.opcode) {
@@ -87,6 +87,7 @@ public class IsaSim {
         arguments.rs2 = (arguments.instruction >>> 20) & 0x1f;
         int imm5 = (arguments.instruction >>> 25);
         arguments.immediate = imm4 | (imm5 << 5);
+		System.out.println(arguments.toString());
         
         switch(arguments.opcode) {
         		case 0x23:
@@ -123,12 +124,17 @@ public class IsaSim {
         arguments.rs1 = (arguments.instruction >>> 15) & 0x1f;
         arguments.rs2 = (arguments.instruction >>> 20) & 0x1f;
         int imm5 = (arguments.instruction >>> 25);
-        int bit11 = (imm4 & 0x1) << 10;
-        int bit12 = (imm5 >>> 6) << 11;
+        int bit11 = (imm4 & 0x1) << 11;
+        int bit12 = (imm5 >>> 6) << 12;
         int bit1_4 = (imm4 >>> 1) << 1;
-        int bit5_10 = (imm5 & 0x3f) << 4;
-        arguments.immediate = bit1_4 | bit5_10 | bit11 | bit12;
-        
+        int bit5_10 = (imm5 & 0x3f) << 5;
+        arguments.immediate = bit1_4 | bit5_10 | bit11;
+        if(bit12 == 4096) {
+        		//Handle sign bit
+        		arguments.immediate -= 4096;
+        }
+		System.out.println(arguments.toString());
+
         switch(arguments.opcode) {
 		case 0x63:
 			copyData(IsaExecute.branch(this));
@@ -146,7 +152,8 @@ public class IsaSim {
         int bit1_10 = (imm & 0x7fe00) >>> 9;
         int bit20 = (imm >>> 19) << 19;
         arguments.immediate = bit1_10 | bit11 | bit12_19 | bit20;
-        
+		System.out.println(arguments.toString());
+
         switch(arguments.opcode) {
 		case 0x6f:
 			copyData(IsaExecute.jal(this));
