@@ -125,13 +125,13 @@ public class IsaSim {
         arguments.rs2 = (arguments.instruction >>> 20) & 0x1f;
         int imm5 = (arguments.instruction >>> 25);
         int bit11 = (imm4 & 0x1) << 11;
-        int bit12 = (imm5 >>> 6) << 12;
+        int bit12 = (imm5 >>> 6);
         int bit1_4 = (imm4 >>> 1) << 1;
         int bit5_10 = (imm5 & 0x3f) << 5;
         arguments.immediate = bit1_4 | bit5_10 | bit11;
-        if(bit12 == 4096) {
-        		//Handle sign bit
-        		arguments.immediate -= 4096;
+        //Handle sign bit
+        if(bit12 == 1) {
+        		arguments.immediate -= 4096; //2^12
         }
 		System.out.println(arguments.toString());
 
@@ -147,11 +147,15 @@ public class IsaSim {
     public void handle_ujtype() {
     		arguments.rd = (arguments.instruction >>> 7) & 0x1f;
         int imm = arguments.instruction >>> 12;
-        int bit12_19 = (imm & 0xff) << 12;
-        int bit11 = (imm & 0x100) << 2;
-        int bit1_10 = (imm & 0x7fe00) >>> 9;
-        int bit20 = (imm >>> 19) << 19;
-        arguments.immediate = bit1_10 | bit11 | bit12_19 | bit20;
+        int bit12_19 = (imm & 0xff) << 13;
+        int bit11 = (imm & 0x100) << 3;
+        int bit1_10 = (imm & 0x7fe00) >>> 8;
+        int bit20 = (imm >>> 19);
+        arguments.immediate = bit1_10 | bit11 | bit12_19;
+        //Handle the sign bit
+        if(bit20 == 1) {
+        		arguments.immediate -= 1048576; //2^20
+        }
 		System.out.println(arguments.toString());
 
         switch(arguments.opcode) {
