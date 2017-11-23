@@ -18,9 +18,9 @@ public class InstructionArguments{
 	public String toString() {
 		String result = "Current instruction: " + Integer.toBinaryString(instruction) + "\n";
 		result += "Parsed elements: opcode = " + Integer.toBinaryString(opcode) + " (" + Integer.toHexString(opcode) + "), ";
-		result += "rd = " + Integer.toBinaryString(rd) + " (" + Integer.toHexString(rd) + "), ";
-		result += "rs1 = " + Integer.toBinaryString(rs1) + " (" + Integer.toHexString(rs1) + "), ";
-		result += "rs2 = " + Integer.toBinaryString(rs2) + " (" + Integer.toHexString(rs2) + "), ";
+		result += "rd = " + Integer.toBinaryString(rd) + " (" + rd + "), ";
+		result += "rs1 = " + Integer.toBinaryString(rs1) + " (" + rs1 + "), ";
+		result += "rs2 = " + Integer.toBinaryString(rs2) + " (" + rs2 + "), ";
 		result += "funct3 = " + Integer.toBinaryString(funct3) + " (" + Integer.toHexString(funct3) + "), ";
 		result += "funct7 = " + Integer.toBinaryString(funct7) + " (" + Integer.toHexString(funct7) + "), ";
 		result += "immediate = " + Integer.toBinaryString(immediate) + " (" + Integer.toString(immediate) + "), ";

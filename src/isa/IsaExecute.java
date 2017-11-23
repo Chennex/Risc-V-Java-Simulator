@@ -3,16 +3,32 @@ package isa;
 public class IsaExecute {
 
 	public static IsaSim load(IsaSim context) {
-		// TODO lb, lh, lw, ld, lbu, lhu, lwu
+		// lb, lh, lw, ld, lbu, lhu, lwu
 		switch(context.arguments.funct3)
 		{
-		case 000:	//lb
-		case 001:	//lh
-		case 010:	//lw
-		case 011:	//ld
-		case 100:	//lbu
-		case 101:	//lhu
-		case 110:	//lwu
+		//First four cases get all bytes from the block, as they extend the sign
+		case 0:	//lb
+			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(32, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
+			break;
+		case 1:	//lh
+			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(32, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
+			break;
+		case 2:	//lw (32 bit)
+			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(32, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
+			break;
+		case 3:	//ld - reverts to 32-bit implementation, as memory isn't 64-bit
+			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(32, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
+			break;
+		//These three cases get only a part of bytes from the block, as they don't extend the sign
+		case 4:	//lbu
+			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(8, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
+			break;
+		case 5:	//lhu
+			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(16, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
+			break;
+		case 6:	//lwu - for 64-bit systems, here reverses to 32-bit implementation
+			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(16, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
+			break;
 		}
 		context.PC += 4;
 		return context;
@@ -24,10 +40,12 @@ public class IsaExecute {
 		case 0:
 			//addi
 			n = context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate;
+			System.out.println(context.reg.getRegister(context.arguments.rs1) + " + "+context.arguments.immediate + " = " + n);
 			break;
 		case 1:
 			//slli
 			n = context.reg.getRegister(context.arguments.rs1) << context.arguments.immediate;
+			System.out.println(context.reg.getRegister(context.arguments.rs1) + " << "+context.arguments.immediate + " = " + n);
 			break;
 		case 2:
 			//slti
@@ -45,9 +63,11 @@ public class IsaExecute {
 			if((context.arguments.immediate & 0x7f0) == 0) {
 				//srli
 				n = context.reg.getRegister(context.arguments.rs1) >>> context.arguments.immediate;
+				System.out.println(context.reg.getRegister(context.arguments.rs1) + " >>> "+context.arguments.immediate + " = " + n);
 			} else {
 				//srai
 				n = context.reg.getRegister(context.arguments.rs1) >> (context.arguments.immediate & 0xf);
+				System.out.println(context.reg.getRegister(context.arguments.rs1) + " >> "+context.arguments.immediate + " = " + n);
 			}
 			break;
 		case 6:
@@ -92,7 +112,7 @@ public class IsaExecute {
 	}
 	
 	public static IsaSim handle_0x73(IsaSim context) {
-		// TODO ecall
+		// ecall
 		switch(context.reg.getRegister(10)) {
 		case 1:
 			//Print an integer in a1
@@ -101,16 +121,24 @@ public class IsaExecute {
 		case 4:
 			//Print a string from address in a1
 			int address = context.reg.getRegister(11);
-			//TODO
+			//As characters are bits, we will need to get a character from following positions
+			char current_character = '0';
+			while(current_character != 0) {
+				current_character = (char)context.mem.readMemory(8, address++);
+				System.out.print(current_character);
+			}
 			break;
 		case 9:
-			//TODO allocate a1 bytes on the heap, return to a0
+			//allocate a1 bytes on the heap, return to a0
 			int bytes = context.reg.getRegister(11);
-			
+			int current_fp = context.reg.getRegister(8);
+			context.reg.setRegister(9, current_fp + bytes);
+			context.reg.setRegister(11, current_fp);
 			break;
 		case 10:
 			//Exit with code 0
 			System.out.println(context.reg);
+			System.out.println(context.mem);
 			System.exit(0);
 			break;
 		case 11:
@@ -130,31 +158,32 @@ public class IsaExecute {
 	public static IsaSim auipc(IsaSim context) {
 		// auipc - add upper immediate to PC
 		context.reg.setRegister(context.arguments.rd, context.PC + context.arguments.immediate);
+		context.PC += 4;
 		return context;
 	}
 
 	public static IsaSim lui(IsaSim context) {
 		//Load upper immediate
-		int n = 0;
-		n = context.arguments.immediate << 12;
-		context.reg.setRegister(context.arguments.rd, n);
+		context.reg.setRegister(context.arguments.rd, context.arguments.immediate);
 		context.PC += 4;
 		return context;
 	}
 
 	public static IsaSim store(IsaSim context) {
-		// TODO sb, sh, sw, sd
 		switch(context.arguments.funct3)
 		{
-		
-		case 000:	//sb
-		
-		case 001:	//sh
-		
-		case 010:	//sw
-			
-		case 011:	//sd
-			
+		case 0:	//sb
+			context.mem.writeMemory(8, context.reg.getRegister(context.arguments.rs2), context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate);
+			break;
+		case 1:	//sh
+			context.mem.writeMemory(16, context.reg.getRegister(context.arguments.rs2), context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate);
+			break;
+		case 2:	//sw
+			context.mem.writeMemory(32, context.reg.getRegister(context.arguments.rs2), context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate);
+			break;
+		case 3:	//sd - as memory isn't 64-bit, this only takes in 32 bits
+			context.mem.writeMemory(32, context.reg.getRegister(context.arguments.rs2), context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate);
+			break;
 		}
 		context.PC += 4;
 		return context;
@@ -167,13 +196,18 @@ public class IsaExecute {
 		switch(context.arguments.funct3)
 		{
 		case 0:	//Add and sub. (Sub is add with negative number.)
-			if(context.arguments.funct7 == 0)
+			if(context.arguments.funct7 == 0) {
 				n = context.reg.getRegister(context.arguments.rs1) + context.reg.getRegister(context.arguments.rs2);
-			else
+				System.out.println(context.reg.getRegister(context.arguments.rs1) + " + "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
+			}
+			else {
 				n = context.reg.getRegister(context.arguments.rs1) - context.reg.getRegister(context.arguments.rs2);
+				System.out.println(context.reg.getRegister(context.arguments.rs1) + " - "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
+			}
 			break;
 		case 1:	//sll
 			n = context.reg.getRegister(context.arguments.rs1) << context.reg.getRegister(context.arguments.rs2);
+			System.out.println(context.reg.getRegister(context.arguments.rs1) + " << "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
 			break;
 		case 2:	//slt
 			n = context.reg.getRegister(context.arguments.rs1) < context.reg.getRegister(context.arguments.rs2) ? 1 : 0;
@@ -188,22 +222,25 @@ public class IsaExecute {
 			if(context.arguments.funct7 == 0) {
 				//srl
 				n = context.reg.getRegister(context.arguments.rs1) >>> context.reg.getRegister(context.arguments.rs2);
+				System.out.println(context.reg.getRegister(context.arguments.rs1) + " >>> "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
 			} else {
 				//sra
 				n = context.reg.getRegister(context.arguments.rs1) >> context.reg.getRegister(context.arguments.rs2);
+				System.out.println(context.reg.getRegister(context.arguments.rs1) + " >> "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
 			}
 			break;
 		case 6:	//or
 			n = context.reg.getRegister(context.arguments.rs1) | context.reg.getRegister(context.arguments.rs2);
+			System.out.println(context.reg.getRegister(context.arguments.rs1) + " | "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
 			break;
 		case 7:	//and
 			n = context.reg.getRegister(context.arguments.rs1) & context.reg.getRegister(context.arguments.rs2);
+			System.out.println(context.reg.getRegister(context.arguments.rs1) + " & "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
 			break;
 		}
 		
 		context.reg.setRegister(context.arguments.rd, n);
 		context.PC += 4;
-		System.out.println(n);
 		return context;
 	}
 

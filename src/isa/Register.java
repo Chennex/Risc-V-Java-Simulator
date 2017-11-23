@@ -7,14 +7,17 @@ public class Register{
 	
 	public Register() {
 		Arrays.fill(r, 0);
+		setRegister(2,2000);	//Defaults stack pointer to 200.
 	}
 	
 	public void setRegister(int index, int value) throws IllegalArgumentException {
 		if(index == 0)
-			System.out.println("NOTE: Register r0 cannot be changed");
+			//Do nothing. x0 is immutable.
+			return;
 		if(index < 0 || index > 31)
 			throw new IllegalArgumentException("Register index out of range");
-		r[index] = value;
+		else
+			r[index] = value;
 	}
 	
 	public int getRegister(int index) {
@@ -26,7 +29,7 @@ public class Register{
 	}
 	
 	public String toString() {
-		String result = "";
+		String result = "Registers: \n";
 		for(int i=0; i<32;i++) {
 			result = result + "Register "+i+": "+r[i]+"\n";
 		}

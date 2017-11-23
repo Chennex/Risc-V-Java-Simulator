@@ -7,38 +7,45 @@ import java.util.List;
 public class Memory {
 
 	List<Integer> ram = new LinkedList<Integer>();
-			
-	private int pointer;
-
-	
-	
-	public void setPointer(int pointer)
-	{
-		this.pointer = pointer;
-	}
 	
 	//Amount of memory to read should be given as an int, where each integer refers to one block.
-	public int[] readMemory(int amount)
+	public int readMemory(int amount, int location)
 	{
-		int[] returnvalue = new int[amount];
-		int counter = 0;
-		for(int x = pointer; x >= pointer + amount; x++)
-			returnvalue[counter] = (int) ram.get(x);
-		
-		return returnvalue;
+		int mask = 1;
+		for(int i=0; i<amount; i++) {
+			mask *= 2;
+		}
+		mask -= 1;
+		int result = ram.get(location) & mask;
+		System.out.println("Read " + result + " (without a mask: " + ram.get(location)+ ") from memory location "+location);
+		return result;
 	}
 	
-	public void writeMemory(int amount, int[] content)
+	public void writeMemory(int amount, int content, int location)
 	{
-		int x;
-		int y = 0;
-		for(x = pointer; x >= pointer + amount; x++)
-		{
-			ram.add(x,content[y]);
-			y++;
+		//Expand memory to include place to write to.		
+		int mask = 1;
+		for(int i=0; i<amount; i++) {
+			mask *= 2;
 		}
-		pointer = x;
+		mask -= 1;
+		while(location >= ram.size())
+		{
+			ram.add(0);
+		}
+		ram.set(location,(content & mask));
+		System.out.println("Wrote " + (content & mask) + " (without a mask: " + content+ ") to memory location "+location);
+		}
+
+	public String toString() {
+		String result = "Memory: \n";
+		for(int i=0; i<ram.size(); i++) {
+			if(ram.get(i) != 0) {
+				result = result + "Memory location " + i + ": "+ ram.get(i)+"\n";
+			}
+		}
+		return result;
 	}
-
-
 }
+
+

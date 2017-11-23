@@ -14,6 +14,7 @@ public class IsaSim {
 		arguments = new InstructionArguments();
 		arguments.opcode = instruction & 0x7f;
 		arguments.instruction = instruction;
+		System.out.println("PC at " + PC);
 		if(IsaConstants.i_list.contains(arguments.opcode))
 			handle_itype();
 		else if(IsaConstants.u_list.contains(arguments.opcode))
@@ -65,7 +66,7 @@ public class IsaSim {
 
     void handle_utype() {
         arguments.rd = (arguments.instruction >>> 7) & 0x1f;
-        arguments.immediate = (arguments.instruction >>> 12);
+        arguments.immediate = (arguments.instruction >>> 12) << 12;
 		System.out.println(arguments.toString());
 
         switch(arguments.opcode) {
@@ -85,7 +86,7 @@ public class IsaSim {
         arguments.funct3 = (arguments.instruction >>> 12) & 0x7;
         arguments.rs1 = (arguments.instruction >>> 15) & 0x1f;
         arguments.rs2 = (arguments.instruction >>> 20) & 0x1f;
-        int imm5 = (arguments.instruction >>> 25);
+        int imm5 = (arguments.instruction >> 25);
         arguments.immediate = imm4 | (imm5 << 5);
 		System.out.println(arguments.toString());
         
