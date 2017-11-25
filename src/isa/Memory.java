@@ -17,6 +17,7 @@ public class Memory {
 		}
 		mask -= 1;
 		int result = ram.get(location) & mask;
+		result = (result << (32 - amount)) >> (32-amount); //Shift it to sign extend
 		System.out.println("Read " + result + " (without a mask: " + ram.get(location)+ ") from memory location "+location);
 		return result;
 	}
@@ -33,7 +34,7 @@ public class Memory {
 		{
 			ram.add(0);
 		}
-		ram.set(location,(content & mask));
+		ram.set(location,content);
 		System.out.println("Wrote " + (content & mask) + " (without a mask: " + content+ ") to memory location "+location);
 		}
 

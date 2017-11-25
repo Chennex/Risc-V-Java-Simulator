@@ -6,12 +6,12 @@ public class IsaExecute {
 		// lb, lh, lw, ld, lbu, lhu, lwu
 		switch(context.arguments.funct3)
 		{
-		//First four cases get all bytes from the block, as they extend the sign
+		//First four cases get respective number of bytes, sign extend done inside readMemory()
 		case 0:	//lb
-			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(32, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
+			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(8, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
 			break;
 		case 1:	//lh
-			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(32, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
+			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(16, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
 			break;
 		case 2:	//lw (32 bit)
 			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(32, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
@@ -19,15 +19,15 @@ public class IsaExecute {
 		case 3:	//ld - reverts to 32-bit implementation, as memory isn't 64-bit
 			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(32, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
 			break;
-		//These three cases get only a part of bytes from the block, as they don't extend the sign
+		//These three cases get respective number of bytes, then are masked to keep the sign out.
 		case 4:	//lbu
-			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(8, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
+			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(8, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate) & 0xff);
 			break;
 		case 5:	//lhu
-			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(16, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
+			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(16, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate) & 0xffff);
 			break;
 		case 6:	//lwu - for 64-bit systems, here reverses to 32-bit implementation
-			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(16, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
+			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(16, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate) & 0xffff);
 			break;
 		}
 		context.PC += 4;
