@@ -3,10 +3,10 @@ package isa;
 public class IsaExecute {
 
 	public static IsaSim load(IsaSim context) {
-		// lb, lh, lw, ld, lbu, lhu, lwu
+		// lb, lh, lw, lbu, lhu, 
 		switch(context.arguments.funct3)
 		{
-		//First four cases get respective number of bytes, sign extend done inside readMemory()
+		//First three cases get respective number of bytes, sign extend done inside readMemory()
 		case 0:	//lb
 			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(8, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
 			break;
@@ -16,17 +16,11 @@ public class IsaExecute {
 		case 2:	//lw (32 bit)
 			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(32, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
 			break;
-		case 3:	//ld - reverts to 32-bit implementation, as memory isn't 64-bit
-			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(32, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate));
-			break;
-		//These three cases get respective number of bytes, then are masked to keep the sign out.
+		//These two cases get respective number of bytes, then are masked to keep the sign out.
 		case 4:	//lbu
 			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(8, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate) & 0xff);
 			break;
 		case 5:	//lhu
-			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(16, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate) & 0xffff);
-			break;
-		case 6:	//lwu - for 64-bit systems, here reverses to 32-bit implementation
 			context.reg.setRegister(context.arguments.rd, context.mem.readMemory(16, context.reg.getRegister(context.arguments.rs1) + context.arguments.immediate) & 0xffff);
 			break;
 		}
@@ -84,26 +78,6 @@ public class IsaExecute {
 		return context;
 	}
 
-	public static IsaSim shift_immediate_word(IsaSim context) {
-		int n = 0;
-		switch(context.arguments.funct3) {
-		case 1:
-			//slliw
-			n = context.reg.getRegister(context.arguments.rs1) << context.arguments.immediate;
-		case 5:
-			if((context.arguments.immediate & 0x7f0) == 0) {
-				//srliw
-				n = context.reg.getRegister(context.arguments.rs1) >>> context.arguments.immediate;
-			} else {
-				//sraiw
-				n = context.reg.getRegister(context.arguments.rs1) >> ((context.arguments.immediate) & 0xf);
-			}
-		}
-		context.reg.setRegister(context.arguments.rd, n);
-		context.PC += 4;
-		return context;
-	}
-
 	public static IsaSim jalr(IsaSim context) {
 		// jalr
 		context.reg.setRegister(context.arguments.rd, context.PC + 4);
@@ -139,6 +113,7 @@ public class IsaExecute {
 			//Exit with code 0
 			System.out.println(context.reg);
 			System.out.println(context.mem);
+			context.reg.writeToFile();
 			System.exit(0);
 			break;
 		case 11:
@@ -148,6 +123,8 @@ public class IsaExecute {
 		case 17:
 			//Exit with code in a1
 			System.out.println(context.reg);
+			System.out.println(context.mem);
+			context.reg.writeToFile();
 			System.exit(context.reg.getRegister(11));
 			break;
 		}
@@ -190,87 +167,95 @@ public class IsaExecute {
 	}
 
 	public static IsaSim handle_0x33(IsaSim context) {
-		// add, sub, sll, slt, sltu, xor, srl, sra, or, and
+		//Standard: add, sub, sll, slt, sltu, xor, srl, sra, or, and
+		//Extended: mul, mulh, mulhsu, div, divu, rem, remu
 		
 		int n = 0;	//Temp int to store result in. Should be written to registry at address rd.
-		switch(context.arguments.funct3)
+		if(context.arguments.funct7 == 1)
 		{
-		case 0:	//Add and sub. (Sub is add with negative number.)
-			if(context.arguments.funct7 == 0) {
-				n = context.reg.getRegister(context.arguments.rs1) + context.reg.getRegister(context.arguments.rs2);
-				System.out.println(context.reg.getRegister(context.arguments.rs1) + " + "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
+			switch(context.arguments.funct3)
+			{
+				case 0: //Mul
+					n = context.reg.getRegister(context.arguments.rs1) * context.reg.getRegister(context.arguments.rs2);
+					break;
+				case 1: //Mulh
+					long first = (long)context.reg.getRegister(context.arguments.rs1);
+					long second = (long)context.reg.getRegister(context.arguments.rs2);
+					n = (int)(first * second) >>> 32;
+					break;
+				case 2: //Mulhsu
+					long signed = (long)context.reg.getRegister(context.arguments.rs1);
+					long unsigned = -1 & context.reg.getRegister(context.arguments.rs2);
+					n = (int)(signed * unsigned) >>> 32;
+					break;
+				case 3: //Mulhu
+					long one = -1 & context.reg.getRegister(context.arguments.rs1);
+					long two = -1 & context.reg.getRegister(context.arguments.rs2);
+					n = (int)(one * two) >>> 32;
+					break;
+				case 4: //Div
+					n = context.reg.getRegister(context.arguments.rs1) / context.reg.getRegister(context.arguments.rs2);
+					break;
+				case 5: //Divu
+					n = Integer.divideUnsigned(context.reg.getRegister(context.arguments.rs1) , context.reg.getRegister(context.arguments.rs2));
+					break;
+				case 6: //Rem
+					n = context.reg.getRegister(context.arguments.rs1) % context.reg.getRegister(context.arguments.rs2);
+					break;
+				case 7: //Remu
+					n = Integer.remainderUnsigned(context.reg.getRegister(context.arguments.rs1) , context.reg.getRegister(context.arguments.rs2));
+					break;
 			}
-			else {
-				n = context.reg.getRegister(context.arguments.rs1) - context.reg.getRegister(context.arguments.rs2);
-				System.out.println(context.reg.getRegister(context.arguments.rs1) + " - "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
-			}
-			break;
-		case 1:	//sll
-			n = context.reg.getRegister(context.arguments.rs1) << context.reg.getRegister(context.arguments.rs2);
-			System.out.println(context.reg.getRegister(context.arguments.rs1) + " << "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
-			break;
-		case 2:	//slt
-			n = context.reg.getRegister(context.arguments.rs1) < context.reg.getRegister(context.arguments.rs2) ? 1 : 0;
-			break;
-		case 3:	//sltu
-			n = Integer.compare(context.reg.getRegister(context.arguments.rs1), context.reg.getRegister(context.arguments.rs2)) < 0 ? 1 : 0;
-			break;
-		case 4:	//xor
-			n = context.reg.getRegister(context.arguments.rs1) ^ context.reg.getRegister(context.arguments.rs2);
-			break;
-		case 5:	//srl and sra
-			if(context.arguments.funct7 == 0) {
-				//srl
-				n = context.reg.getRegister(context.arguments.rs1) >>> context.reg.getRegister(context.arguments.rs2);
-				System.out.println(context.reg.getRegister(context.arguments.rs1) + " >>> "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
-			} else {
+		}
+		else {
+			switch(context.arguments.funct3)
+			{
+			case 0:	//Add and sub.
+				if(context.arguments.funct7 == 0) {
+					n = context.reg.getRegister(context.arguments.rs1) + context.reg.getRegister(context.arguments.rs2);
+					System.out.println(context.reg.getRegister(context.arguments.rs1) + " + "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
+				}
+				//Need to change to elseif to handle specific instance. Neccesary since addition of RV32M Standard Extension.
+				else {
+					n = context.reg.getRegister(context.arguments.rs1) - context.reg.getRegister(context.arguments.rs2);
+					System.out.println(context.reg.getRegister(context.arguments.rs1) + " - "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
+				}
+				break;
+			case 1:	//sll
+				n = context.reg.getRegister(context.arguments.rs1) << context.reg.getRegister(context.arguments.rs2);
+				System.out.println(context.reg.getRegister(context.arguments.rs1) + " << "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
+				break;
+			case 2:	//slt
+				n = context.reg.getRegister(context.arguments.rs1) < context.reg.getRegister(context.arguments.rs2) ? 1 : 0;
+				break;
+			case 3:	//sltu
+				n = Integer.compare(context.reg.getRegister(context.arguments.rs1), context.reg.getRegister(context.arguments.rs2)) < 0 ? 1 : 0;
+				break;
+			case 4:	//xor
+				n = context.reg.getRegister(context.arguments.rs1) ^ context.reg.getRegister(context.arguments.rs2);
+				break;
+			case 5:	//srl and sra
+				if(context.arguments.funct7 == 0) {
+					//srl
+					n = context.reg.getRegister(context.arguments.rs1) >>> context.reg.getRegister(context.arguments.rs2);
+					System.out.println(context.reg.getRegister(context.arguments.rs1) + " >>> "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
+				} else {
 				//sra
-				n = context.reg.getRegister(context.arguments.rs1) >> context.reg.getRegister(context.arguments.rs2);
-				System.out.println(context.reg.getRegister(context.arguments.rs1) + " >> "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
+					n = context.reg.getRegister(context.arguments.rs1) >> context.reg.getRegister(context.arguments.rs2);
+					System.out.println(context.reg.getRegister(context.arguments.rs1) + " >> "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
+				}
+				break;
+			case 6:	//or
+				n = context.reg.getRegister(context.arguments.rs1) | context.reg.getRegister(context.arguments.rs2);
+				System.out.println(context.reg.getRegister(context.arguments.rs1) + " | "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
+				break;
+			case 7:	//and
+				n = context.reg.getRegister(context.arguments.rs1) & context.reg.getRegister(context.arguments.rs2);
+				System.out.println(context.reg.getRegister(context.arguments.rs1) + " & "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
+				break;
 			}
-			break;
-		case 6:	//or
-			n = context.reg.getRegister(context.arguments.rs1) | context.reg.getRegister(context.arguments.rs2);
-			System.out.println(context.reg.getRegister(context.arguments.rs1) + " | "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
-			break;
-		case 7:	//and
-			n = context.reg.getRegister(context.arguments.rs1) & context.reg.getRegister(context.arguments.rs2);
-			System.out.println(context.reg.getRegister(context.arguments.rs1) + " & "+context.reg.getRegister(context.arguments.rs2) + " = " + n);
-			break;
 		}
 		
-		context.reg.setRegister(context.arguments.rd, n);
-		context.PC += 4;
-		return context;
-	}
-
-	public static IsaSim handle_0x3b(IsaSim context) {
-		// addw, subw, sllw, srlw, sraw
-		int n = 0;
-		switch(context.arguments.funct3) {
-		case 0:
-			if(context.arguments.funct7 == 0) {
-				//addw
-				n = context.reg.getRegister(context.arguments.rs1) + context.reg.getRegister(context.arguments.rs2);
-			} else {
-				//subw
-				n = context.reg.getRegister(context.arguments.rs1) - context.reg.getRegister(context.arguments.rs2);
-			}
-			break;
-		case 1:
-			//sllw
-			n = context.reg.getRegister(context.arguments.rs1) << context.reg.getRegister(context.arguments.rs2);
-			break;
-		case 5:
-			if(context.arguments.funct7 == 0) {
-				//srlw
-				n = context.reg.getRegister(context.arguments.rs1) >>> context.reg.getRegister(context.arguments.rs2);
-			} else {
-				//sraw
-				n = context.reg.getRegister(context.arguments.rs1) >> context.reg.getRegister(context.arguments.rs2);
-			}
-			break;
-		}
 		context.reg.setRegister(context.arguments.rd, n);
 		context.PC += 4;
 		return context;

@@ -50,7 +50,7 @@ public class IsaSim {
         			copyData(IsaExecute.handle_0x13(this));
         			break;
         		case 0x1b:
-        			copyData(IsaExecute.shift_immediate_word(this));
+        			System.out.println("64-bit operations not supported");
         			break;
         		case 0x67:
         			copyData(IsaExecute.jalr(this));
@@ -112,7 +112,7 @@ public class IsaSim {
         			copyData(IsaExecute.handle_0x33(this));
         			break;
         		case 0x3b:
-        			copyData(IsaExecute.handle_0x3b(this));
+        			System.out.println("64-bit operations not supported");
         			break;
         		default:
         			break;

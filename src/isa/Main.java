@@ -18,7 +18,7 @@ public class Main {
 			}
 			*/
 			
-			RandomAccessFile file = new RandomAccessFile(new File(readPath()), "r");
+			RandomAccessFile file = new RandomAccessFile(new File(readPath("Input path to instruction file: ")), "r");
 			while(decoder.PC <= file.length()) {
 				file.seek(decoder.PC);
 				decoder.decodeInstruction(Integer.reverseBytes(file.readInt()));
@@ -39,11 +39,12 @@ public class Main {
 		list.toArray(result);
 		return result;
 	}
-	private static String readPath()
+	protected static String readPath(String text)
 	{
 		Scanner reader = new Scanner(System.in);
+		System.out.print(text);
 		String n = reader.nextLine();
-		reader.close();
+		//reader.close();
 		return n;
 	}
 }

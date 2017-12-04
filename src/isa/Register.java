@@ -1,5 +1,7 @@
 package isa;
 
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
 import java.util.Arrays;
 
 public class Register{
@@ -34,5 +36,20 @@ public class Register{
 			result = result + "Register "+i+": "+r[i]+"\n";
 		}
 		return result;
+	}
+	
+	public void writeToFile()  {
+		String path = Main.readPath("Input path to output file: ");
+		DataOutputStream output;
+		try {
+			output = new DataOutputStream(new FileOutputStream(path));
+			for(int a: r) {
+				output.writeInt(a);
+			}
+			output.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 	}
 }
