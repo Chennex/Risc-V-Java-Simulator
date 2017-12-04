@@ -33,7 +33,7 @@ public class Register{
 	public String toString() {
 		String result = "Registers: \n";
 		for(int i=0; i<32;i++) {
-			result = result + "Register "+i+": "+r[i]+"\n";
+			result = result + "Register "+i+": "+r[i]+" ("+Integer.toHexString(r[i])+")\n";
 		}
 		return result;
 	}
